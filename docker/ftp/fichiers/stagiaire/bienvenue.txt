@@ -1,0 +1,2 @@
+Bienvenue sur le serveur de transfert du laboratoire.
+Ce fichier sert aux tests de téléchargement (RETR).

@@ -1,0 +1,15 @@
+# Extensions X.509 v3 du certificat du serveur FTPS du laboratoire.
+# Utilisé par : openssl x509 -req ... -extfile config/pki/ftps-server.ext
+
+# Ce certificat n'est PAS une autorité de certification.
+basicConstraints = critical, CA:FALSE
+# Usages autorisés de la clé : signature (TLS 1.2/1.3) et chiffrement de clé.
+keyUsage = critical, digitalSignature, keyEncipherment
+# Usage étendu : authentification d'un SERVEUR TLS.
+extendedKeyUsage = serverAuth
+# SAN (Subject Alternative Name) : noms DNS pour lesquels le certificat
+# est valide. Le client compare le nom qu'il a demandé à CETTE liste.
+subjectAltName = DNS:ftps-secure, DNS:ftps-implicit
+# Identifiants de clé (facilitent la construction de la chaîne de confiance).
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid, issuer

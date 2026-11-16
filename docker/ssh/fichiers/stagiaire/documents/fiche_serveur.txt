@@ -1,0 +1,4 @@
+[FICHIER DE DÉMONSTRATION — DONNÉES FICTIVES]
+Fiche d'exploitation du serveur SSH du laboratoire.
+Marqueur de confidentialité : SECRET-SSH-77
+Si ce marqueur apparaît en clair dans une capture, le transfert n'est pas protégé.

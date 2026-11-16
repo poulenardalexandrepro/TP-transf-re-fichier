@@ -1,0 +1,12 @@
+# Matériel cryptographique créé par les élèves : ne JAMAIS le versionner.
+.lab/**
+!.lab/**/
+!.lab/**/.gitkeep
+# Captures réseau et fichiers téléchargés pendant le TP.
+captures/*
+!captures/.gitkeep
+telechargements/*
+!telechargements/.gitkeep
+# Divers
+__pycache__/
+*.pyc

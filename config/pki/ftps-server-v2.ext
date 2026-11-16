@@ -1,0 +1,8 @@
+# Version 2 du certificat FTPS : ajout du nom « ftps.tp.lan » dans le SAN
+# (remédiation de l'étude de cas « nom DNS absent du SAN »).
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:ftps-secure, DNS:ftps-implicit, DNS:ftps.tp.lan
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid, issuer

@@ -1,0 +1,3 @@
+Espace public du serveur FTP du laboratoire.
+Ce fichier est accessible SANS authentification (compte « anonymous »).
+Un accès anonyme ne doit jamais exposer de données internes.

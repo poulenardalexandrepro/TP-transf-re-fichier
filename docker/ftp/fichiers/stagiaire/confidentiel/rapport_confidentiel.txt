@@ -1,0 +1,5 @@
+[FICHIER DE DÉMONSTRATION — DONNÉES FICTIVES]
+RAPPORT CONFIDENTIEL — Projet ORION
+Code d'accès au local serveur : SECRET-FTP-42
+Toute personne capable de lire cette ligne dans une capture réseau
+a démontré que le transfert n'était pas chiffré.

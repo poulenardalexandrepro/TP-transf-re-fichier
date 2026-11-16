@@ -1,0 +1,169 @@
+# =============================================================================
+#  TP « Transfert de fichiers : fonctionnement des protocoles,
+#        failles de sécurité et remédiations »
+#
+#  Laboratoire Docker destiné à GitHub Codespaces.
+#
+#  RÈGLES DE SÉCURITÉ DU LABORATOIRE
+#   - AUCUN port n'est publié (pas de section « ports: ») : les services
+#     volontairement vulnérables ne sont jamais joignables depuis Internet.
+#   - Le réseau « labnet » est « internal: true » : les conteneurs ne peuvent
+#     pas sortir vers Internet et ne sont joignables que depuis ce réseau.
+#   - Les clés et certificats sont créés par les élèves dans .lab/ et montés
+#     en lecture seule dans les serveurs.
+# =============================================================================
+name: tp-transfert
+
+# Une même image sert à plusieurs serveurs. Elle n'est construite qu'une
+# seule fois (par ftp-plain et ssh-weak) ; les autres services la réutilisent
+# et ne tentent jamais de la télécharger (pull_policy: never).
+x-ftp-image: &ftp-image
+  image: tp-transfert/ftp:1.0
+  pull_policy: never
+
+x-ssh-image: &ssh-image
+  image: tp-transfert/ssh:1.0
+  pull_policy: never
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # FTP non chiffré (TCP/21) — port de données passif 30000-30009
+  # Vulnérabilités volontaires : aucun chiffrement, accès anonyme autorisé.
+  # ---------------------------------------------------------------------------
+  ftp-plain:
+    build:
+      context: ./docker/ftp
+    image: tp-transfert/ftp:1.0
+    hostname: ftp-plain
+    environment:
+      VSFTPD_PROFILE: plain
+      FTP_PASSWORD: demo-ftp-123
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.10
+
+  # ---------------------------------------------------------------------------
+  # FTPS explicite (TCP/21 + AUTH TLS) — ports passifs 30000-30009
+  # Protections : TLS obligatoire pour l'authentification ET les données.
+  # Alias DNS « ftps.tp.lan » volontairement ABSENT du SAN initial
+  # (étude de cas « nom absent du SAN »).
+  # ---------------------------------------------------------------------------
+  ftps-secure:
+    <<: *ftp-image
+    hostname: ftps-secure
+    environment:
+      VSFTPD_PROFILE: explicit
+      FTP_PASSWORD: demo-ftps-456
+    volumes:
+      - ./.lab/pki:/etc/lab-pki:ro
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.11
+        aliases:
+          - ftps.tp.lan
+
+  # ---------------------------------------------------------------------------
+  # FTPS implicite (TCP/990, TLS dès la connexion) — ports passifs 30100-30109
+  # ---------------------------------------------------------------------------
+  ftps-implicit:
+    <<: *ftp-image
+    hostname: ftps-implicit
+    environment:
+      VSFTPD_PROFILE: implicit
+      FTP_PASSWORD: demo-ftps-456
+    volumes:
+      - ./.lab/pki:/etc/lab-pki:ro
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.12
+
+  # ---------------------------------------------------------------------------
+  # SSH de démonstration à configuration FAIBLE (TCP/22)
+  # Mots de passe faibles, root autorisé, StrictModes désactivé, journaux pauvres.
+  # Les clés d'hôte sont générées par le serveur lui-même au 1er démarrage.
+  # ---------------------------------------------------------------------------
+  ssh-weak:
+    build:
+      context: ./docker/ssh
+    image: tp-transfert/ssh:1.0
+    hostname: ssh-weak
+    environment:
+      SSH_PROFILE: weak
+    volumes:
+      # Clés d'hôte générées par le serveur lui-même et conservées.
+      - ssh-weak-hostkeys:/var/lib/lab-hostkeys
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.20
+
+  # ---------------------------------------------------------------------------
+  # SSH DURCI (TCP/22) : clé publique uniquement, root interdit, comptes
+  # restreints, algorithmes modernes, journalisation VERBOSE.
+  # Clé d'hôte générée par le serveur au 1er démarrage (volume dédié).
+  # ---------------------------------------------------------------------------
+  ssh-secure:
+    <<: *ssh-image
+    hostname: ssh-secure
+    environment:
+      SSH_PROFILE: secure
+    volumes:
+      - ssh-secure-hostkeys:/var/lib/lab-hostkeys
+      - ./.lab/ssh/deploy:/lab-deploy:ro
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.21
+
+  # ---------------------------------------------------------------------------
+  # SSH IMPOSTEUR (TCP/22) : même compte que ssh-secure mais clé d'hôte
+  # DIFFÉRENTE (générée par lui-même). Sert à démontrer l'usurpation.
+  # ---------------------------------------------------------------------------
+  ssh-impostor:
+    <<: *ssh-image
+    hostname: ssh-impostor
+    environment:
+      SSH_PROFILE: impostor
+    volumes:
+      - ssh-impostor-hostkeys:/var/lib/lab-hostkeys
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.22
+
+  # ---------------------------------------------------------------------------
+  # Poste client : Python (ftplib, ssl, paramiko), ssh/scp/sftp, lftp, curl,
+  # openssl, tcpdump, tshark, ss, iptables (simulation de pare-feu).
+  # Le dépôt est monté dans /lab : les fichiers créés par l'élève (clés,
+  # captures) apparaissent dans l'explorateur de Codespaces.
+  # ---------------------------------------------------------------------------
+  client:
+    build:
+      context: ./docker/client
+    image: tp-transfert/client:1.0
+    hostname: client
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+      # Répertoire ~/.ssh de l'élève conservé même si le conteneur est recréé.
+      - client-ssh:/home/etudiant/.ssh
+    cap_add:
+      - NET_ADMIN      # iptables (simulation de pare-feu)
+      - NET_RAW        # tcpdump / tshark
+    stdin_open: true
+    tty: true
+    networks:
+      labnet:
+        ipv4_address: 172.30.89.100
+
+volumes:
+  client-ssh:
+  ssh-weak-hostkeys:
+  ssh-secure-hostkeys:
+  ssh-impostor-hostkeys:
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true            # aucune sortie vers Internet
+    ipam:
+      config:
+        - subnet: 172.30.89.0/24

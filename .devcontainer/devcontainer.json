@@ -1,0 +1,50 @@
+{
+  // Environnement GitHub Codespaces du TP « Transfert de fichiers ».
+  // Le Codespace fournit un terminal Linux disposant de Docker
+  // (fonctionnalité docker-in-docker). Les serveurs du laboratoire
+  // s'exécutent dans des conteneurs isolés, lancés par scripts/setup.sh.
+  "name": "TP Transfert de fichiers - FTP FTPS SSH SCP SFTP",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": false,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+
+  // Ressources minimales conseillées pour 7 conteneurs légers.
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "16gb"
+  },
+
+  // Aucun port n'est transféré vers le navigateur : les services
+  // volontairement vulnérables restent confinés au Codespace.
+  "forwardPorts": [],
+  "otherPortsAttributes": {
+    "onAutoForward": "ignore"
+  },
+
+  "remoteUser": "vscode",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "remote.autoForwardPorts": false,
+        "files.exclude": {
+          "**/.git": true
+        }
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+
+  // Message affiché à la création : les élèves lancent eux-mêmes les scripts.
+  "postCreateCommand": "echo 'Codespace prêt. Lancez : bash scripts/check_environment.sh'"
+}
